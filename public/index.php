@@ -16,9 +16,17 @@ if (strpos($requestUri, $expectedBasePath) !== 0) {
 
 $param = substr($requestUri, strlen($expectedBasePath));
 
+// encrypt string body
+function encryptString($string, $key)
+{
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+    $encrypted = openssl_encrypt($string, 'aes-256-cbc', $key, 0, $iv);
+    return base64_encode($encrypted . '::' . $iv);
+}
+
 if (!empty($param)) {
     $apiUrl = ($config['xray_panel_allow_ssl'] ? 'https' : 'http') . '://' . $config['xray_panel_domain'] . ':' . $config['xray_panel_port'] . '/' . $config['xray_uri_path'] . '/' . $param;
- 
+
     // Initialize cURL session
     $ch = curl_init();
 
@@ -61,6 +69,6 @@ if (!empty($param)) {
     }
 
     // Return the response body
-    echo $body;
+    echo encryptString($body, $config['encrypt_string_key']);
     exit;
 }
